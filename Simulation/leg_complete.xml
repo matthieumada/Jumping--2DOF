@@ -1,0 +1,76 @@
+<mujoco model="leg_2dof">
+
+  <!-- ===== COMPILATION & SIMULATION OPTIONS ===== -->
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicit" solver="Newton" gravity="0 0 -9.81"/>
+
+  <!--include file='assets/2DOF_leg/stand_complete.xml'> -->
+  <!-- ===== ASSETS ===== -->
+  <asset>
+    <!-- Meshes STl file are in cm -->
+    <mesh name="hip_base"   file="assets/2DOF_leg/hips_supported.stl"   scale="0.001 0.001 0.001"/>
+    <mesh name="upper_base" file="assets/2DOF_leg/upper_leg.stl" scale="0.01 0.01 0.01"/>
+    <mesh name="lower_leg"  file="assets/2DOF_leg/leg.stl"       scale="0.01 0.01 0.01"/>
+
+    <!-- Sol texture -->
+    <texture name="tex_ground" type="2d" builtin="checker"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+             mark="edge" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="mat_ground" texture="tex_ground" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <!-- ===== DEFAULTS ===== -->
+  <default>
+    <!-- general parameter -->
+    <joint damping="1.0" armature="0.01"/>
+    <geom friction="1.0 0.1 0.1" margin="0.002" solref="-2000 -100" solimp="0.9 0.95 0.001"/>
+
+    <!-- Leg class -->
+    <default class="leg_part">
+      <geom contype="1" conaffinity="1" group="0"/>
+    </default>
+
+    <!-- Motor class -->
+    <default class="motor">
+      <motor ctrlrange="-1 1" forcerange="-10 10"/>
+    </default>
+  </default>
+
+  <!-- ===== World ===== -->
+  <worldbody>
+    <!-- Ground and Light -->
+    <geom name="floor" type="plane" pos="0 0 0" size="0 0 0.05" material="mat_ground"/>
+    <light directional="true" pos="0 0 5" dir="0 0 -1" diffuse=".9 .9 .9" specular=".2 .2 .2"/>
+
+    <!-- Main body ( fixed base) -->
+    <body name="base" pos="0 0 0.28" quat="0.70710678 0.70710678 0 0" childclass="leg_part">
+      <geom name="hip_geom" type="mesh" mesh="hip_base"/>
+      <inertial mass="0.25" pos="0 0 0" diaginertia="0.003 0.003 0.003"/>
+
+      <!-- Firts degree of freedom: hip -->
+      <body name="upper_leg" pos="0.03 -0.114 0.111" quat="1 0 0 0" childclass="leg_part">
+        <joint name="hip_joint" type="hinge" pos="0 0 0.15" axis="1 0 0" range="-2.0 0.5" damping="1000.0"/>
+        <geom name="upper_geom" type="mesh" mesh="upper_base"/>
+        <inertial mass="0.15" pos="0 0 -0.05" diaginertia="0.002 0.002 0.002"/>
+
+        <!-- Second degree of freedom knee -->
+        <!-- body name="lower_leg" pos="0.02 0 0" euler="-1.57 3.14 0" childclass="leg_part">
+          <joint name="knee_joint" type="hinge" pos="0 0 0.15" axis="1 0 0" range="-2.0 0.5" damping="1000.0"/>
+          <geom name="lower_geom" type="mesh" mesh="lower_leg"/>
+          <inertial mass="0.10" pos="0 0 -0.05" diaginertia="0.001 0.001 0.001"/> -->
+
+          <!-- Points to localize
+          <site name="knee_site" pos="0 0 0" size="0.01" rgba="0 1 0 1"/>
+          <site name="foot_site" pos="0 0 -0.18" size="0.01" rgba="1 0 0 1"/> 
+        </body>-->
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- ===== actuator ===== -->
+  <actuator>
+    <motor name="hip_motor"  joint="hip_joint"  class="motor" gear="1" />
+    <!--  <motor name="knee_motor" joint="knee_joint" class="motor" gear="1" /> -->
+  </actuator>
+
+</mujoco>

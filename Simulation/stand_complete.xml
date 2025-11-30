@@ -1,0 +1,105 @@
+<mujoco model="stand_fully">
+
+  <!-- ===== COMPILATION & SIMULATION OPTIONS ===== -->
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="RK4" solver="Newton" gravity="  0 0 -9.81  "/>
+
+  <!-- ===== ASSETS ===== -->
+      <!-- Meshes STl file : -->
+  <asset>
+    <!-- Meshes stand in m  -->
+    <mesh name="stand"   file="assets/2DOF_leg/stand.stl" scale="0.001 0.001 0.001"/>
+
+    <!-- Meshes scole stand in m -->
+    <mesh name="socle" file="assets/2DOF_leg/socle.stl" scale="0.001 0.001 0.001"/>
+
+    <!-- hip_supported in m -->
+    <mesh name="hip_base"   file="assets/2DOF_leg/hips_supported.stl" scale="0.001 0.001 0.001"/>
+
+    <!-- upper base in cm -->
+    <mesh name="upper_base" file="assets/2DOF_leg/upper_leg.stl" scale="0.01 0.01 0.01"/>
+
+      <!-- leg  base in cm -->
+    <mesh name="lower_leg"  file="assets/2DOF_leg/leg.stl" scale="0.01 0.01 0.01"/>
+
+    <texture name="tex_ground" type="2d" builtin="checker"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+             mark="edge" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="mat_ground" texture="tex_ground" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <!-- ===== DEFAULTS ===== -->
+  <default>
+    <!-- general parameter 0.3  -->
+    <joint armature="0.01" damping="0.5"/>
+    <geom friction="0.05 0.3 0.3" margin="0.002" solref="-500 -50" solimp="0.9 0.9 0.01"/>
+
+    <!-- Leg class -->
+    <default class="leg_part">
+      <geom contype="1" conaffinity="1" group="0"/>
+    </default>
+
+    <!-- Motor class -->
+    <default class="motor">
+      <motor ctrlrange="-1 1" forcerange="-10 10" gear="1000"/> 
+    </default>
+  </default>
+
+  <!-- ===== World ===== -->
+  <worldbody>
+    <!-- Ground and Light -->
+    <geom name="floor" type="plane" pos="0 0 0" size="0 0 0.05" material="mat_ground"/>
+    <light directional="true" pos="0 0 5" dir="0 0 -1" diffuse=".9 .9 .9" specular=".2 .2 .2"/>
+
+    <!-- Main body ( fixed stand) -->
+    <body name="base_0" pos="0 0 0.04" quat="0.70710678 0.70710678 0 0" >
+      <geom name="base_stand" type="mesh" mesh="stand" rgba="0.94509803921568621 0.9254901960784314 0.9372549019607843 0.8"/>
+      <inertial mass="150" pos="0 0 0" diaginertia="0.3 0.3 0.3"/>
+        <!-- Firts joint translation axe z: hip leg -->
+        <body name="hip" pos="0.01 0.5 0" quat="1 0 0 0" childclass="leg_part">
+        <joint name="hip_joint" type="slide" pos="0 0 0.15" axis="0 1 0" range="0.0725 1" />
+        <geom name="hip_geom" type="mesh" mesh="hip_base" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
+        <inertial mass="25" pos="0 0 0" diaginertia="0.006 0.006 0.006"/>
+        <!-- Second joint rotation axe x: range="-3.14 0" -2.356194490192345 -2.35 -->
+            <body name="upper_leg" pos=" 0.135 0.02 0.09" quat="0.70710678  0 -0.70710678 0" childclass="leg_part">
+            <joint name="upper_joint" type="hinge" pos=" 0 0 0.161" axis="1 0 0" range="-2.356194490192345 -2.35"  limited ="true" damping ="1.0"/>
+            <geom name="upper_geom" type="mesh" mesh="upper_base" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
+            <inertial mass="15" pos="0 0 -0.05" diaginertia="0.003 0.003 0.003"/>
+            <!-- Third joint rotation axe x: leg 0 0 0.161 s -3.14 0 -->
+                <body name="leg" pos="0.016 0 0 " euler="0 0 3.14" childclass="leg_part">
+                <joint name="leg_joint" type="hinge" pos=" 0 0 0" axis="1 0 0" range="-3.14 -1.5" limited="true" damping ="1.0"/>
+                <geom name="leg_geom" type="mesh" mesh="lower_leg" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
+                <inertial mass="15" pos="0 0 -0.05" diaginertia="0.002 0.002 0.002"/> 
+                </body>
+            </body>
+        </body>
+    </body>
+    <body name="socle_body" pos="0.04 -0.05 0" quat="1 0 0 0" >
+       <geom name="socle_geom" type="mesh" mesh="socle" rgba="0.94509803921568621 0.9254901960784314 0.9372549019607843 0.8"/>
+       <site name="socle_site" type= "box" pos="-0.043 -0.06 0.03" size="0.06 0.03 0.001" rgba="1 0 0 1"/>
+    </body>
+  </worldbody>
+
+<!-- Actuator definition by joint  the actautor for the hip was for the design-->
+<actuator>
+    <!-- <motor name="hip_motor" joint="hip_joint"  class="motor" /> Translation  -->  
+    <motor name="upper_motor" joint="upper_joint" class="motor" ctrlrange="-70 1000" forcerange="-30 30" gear="1000"/> <!-- Rotation  -->
+    <motor name="leg_motor"   joint="leg_joint"   class="motor" ctrlrange="-200 200" forcerange="-40 40" gear="1000" />  <!-- Rotation  -->
+</actuator>
+
+<!-- Sensor to get data and have a good control on the feedback-->
+<sensor>
+  <!-- Hip position -->
+  <jointpos name="hip_position" joint="hip_joint"/>
+ 
+  <!-- Torques applied by each actuator-->
+  <!-- Torques Upper_leg-->
+  <actuatorfrc name="upper_torque" actuator="upper_motor"/>
+  <!-- Torques Leg--> 
+  <actuatorfrc name="leg_torque" actuator="leg_motor"/>
+
+  <!-- contact sensor to get the force -->
+  <force name="socle_contact" site="socle_site"/>
+</sensor>
+
+</mujoco>

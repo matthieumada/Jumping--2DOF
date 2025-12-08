@@ -36,7 +36,7 @@
 
     <!-- Leg class -->
     <default class="leg_part">
-      <geom contype="1" conaffinity="1" group="0"/>
+      <geom contype="0" conaffinity="0" group="0"/>
     </default>
 
     <!-- Motor class -->
@@ -55,37 +55,37 @@
     <body name="base_0" pos="0 0 0.04" quat="0.70710678 0.70710678 0 0" >
       <geom name="base_stand" type="mesh" mesh="stand" rgba="0.94509803921568621 0.9254901960784314 0.9372549019607843 0.8"/>
       <inertial mass="150" pos="0 0 0" diaginertia="0.3 0.3 0.3"/>
-        <!-- Firts joint translation axe z: hip leg -->
+        <!-- Firts joint translation axe z: hip leg range="0.0725 1"-->
         <body name="hip" pos="0.01 0.7 0" quat="1 0 0 0" childclass="leg_part">
-        <joint name="hip_joint" type="slide" pos="0 0 0.15" axis="0 1 0" range="0.0725 1" />
-        <geom name="hip_geom" type="mesh" mesh="hip_base" friction="0.5 0.3 0.3" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
+        <joint name="hip_joint" type="slide" pos="0 0 0.15" range="-0.001 1" axis="0 1 0" />
+        <geom name="hip_geom" type="mesh" mesh="hip_base"  rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
         <inertial mass="25" pos="0 0 0" diaginertia="0.006 0.006 0.006"/>
-        <!-- Second joint rotation axe x:pos=" 0.135 0.02 0.09" range="-3.14 0" -2.356194490192345 -2.35 -->
-            <body name="upper_leg" pos="0.1325 0.021 0.13" quat="0.70710678  0 -0.70710678 0" childclass="leg_part">
-            <joint name="upper_joint" type="hinge" pos=" 0 0 0.16" axis="1 0 0" range="-3.14 3.14"  limited ="true" damping ="1.0"/>
+        <!-- Second joint rotation axe x: range="-3.14 0" -2.356194490192345 -2.35 -->
+            <body name="upper_leg" pos=" 0.135 0.02 0.09" quat="0.70710678  0 -0.70710678 0" childclass="leg_part">
+            <joint name="upper_joint" type="hinge" pos=" 0 0 0.161" axis="1 0 0" damping ="1.0"/>
             <geom name="upper_geom" type="mesh" mesh="upper_base" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
             <inertial mass="15" pos="0 0 -0.05" diaginertia="0.003 0.003 0.003"/>
             <!-- Third joint rotation axe x: leg 0 0 0.161 s -3.14 0 -->
                 <body name="leg" pos="0.016 0 0 " euler="0 0 3.14" childclass="leg_part">
-                <joint name="leg_joint" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.14 3.14" limited="true" damping ="1.0"/>
+                <joint name="leg_joint" type="hinge" pos=" 0 0 0" axis="1 0 0"  damping ="1.0"/>
                 <geom name="leg_geom" type="mesh" mesh="lower_leg" rgba="0.38823529411764707 0.7254901960784313 0.8352941176470589 1"/>
                 <inertial mass="15" pos="0 0 -0.05" diaginertia="0.002 0.002 0.002"/> 
                 </body>
             </body>
         </body>
     </body>
-    <body name="socle_body" pos="0.04 -0.05 0" quat="1 0 0 0" >
+    <body name="socle_body" pos="0.04 -0.05 0" quat="1 0 0 0">
        <geom name="socle_geom" type="mesh" mesh="socle" rgba="0.94509803921568621 0.9254901960784314 0.9372549019607843 0.8"/>
-       
-       <site name="socle_site" type= "box" pos="-0.043 -0.06 0.03" size="0.06 0.03 0.001" rgba="1 0 0 1"/>
+       <site name="socle_site" type= "box" pos="-0.043 -0.06 0.03"  size="0.6 0.03 0.001" rgba="1 0 0 1"/>
+       <geom name="physic_geom" type="box" pos="-0.043 -0.06 0.018" size="0.6 0.03 0.012" contype="1" conaffinity="1" rgba="0 0 0 1"/>
     </body>
   </worldbody>
 
 <!-- Actuator definition by joint  the actautor for the hip was for the design-->
 <actuator>
     <!-- <motor name="hip_motor" joint="hip_joint"  class="motor" /> Translation  -->  
-    <motor name="upper_motor" joint="upper_joint" class="motor" ctrlrange="-4000 4000" forcerange="-4000 4000" gear="1"/> <!-- Rotation  -->
-    <motor name="leg_motor"   joint="leg_joint"   class="motor" ctrlrange="-4000 4000" forcerange="-4000 4000" gear="1" />  <!-- Rotation  -->
+    <motor name="upper_motor" joint="upper_joint" class="motor" ctrlrange="-40 40" forcerange="-40 40" gear="1"/> <!-- Rotation  -->
+    <motor name="leg_motor"   joint="leg_joint"   class="motor" ctrlrange="-40 40" forcerange="-40 40" gear="1"/>  <!-- Rotation  -->
 </actuator>
 
 <!-- Sensor to get data and have a good control on the feedback-->

@@ -12,16 +12,22 @@ ks = 7500 # N/m
 kd = 0.5 # Ns/m
 
 #Controller parameter: stiffness and damping PD swing leg 
-kx = 1.75 * 10 **(3)# N/m
-kz = 5.0 * 10 **(2) # N/m
-mx = 1.0 * 10 **(1) # Ns/m 
-mz = 1.0 * 10 **(1) # Ns/m 
-
-# Controller parameter : stiffness swing P leg
 # kx = 1.75 * 10 **(3)# N/m
 # kz = 5.0 * 10 **(2) # N/m
-# mx = 0  # Ns/m 
-# mz = 0 # Ns/m 
+# mx = 1.0 * 10 **(1) # Ns/m 
+# mz = 1.0 * 10 **(1) # Ns/m 
+
+# Controller parameter : stiffness swing P leg
+kx = 1.75 * 10 **(3)# N/m
+kz = 5.0 * 10 **(2) # N/m
+mx = 0  # Ns/m 
+mz = 0 # Ns/m 
+
+# goal position 
+Q_0 = -PI/4 # upper"
+Q_1 =  PI/2 # leg
+delta_goal_x = L1*np.sin(Q_0) + L2*np.sin(Q_0 + Q_1)
+delta_goal_z = L1*np.cos(Q_0) + L2*np.cos(Q_0 + Q_1)
 
 def forward_kinematics(q, dq,  x_hip, z_hip):
     q0 = float(q[0])
@@ -46,7 +52,7 @@ def forward_kinematics(q, dq,  x_hip, z_hip):
 
 def impedance_control(d, x_hip, z_hip, f_ground):
     Ld = 0.2 # desired leg length with all leg have a angle of pi/4 
-    pos_des = np.array([ x_hip, z_hip - 0.2])
+    pos_des = np.array([ x_hip-delta_goal_x, z_hip - delta_goal_z])
 
     # Joint state
     q = d.qpos[[1, 2]]

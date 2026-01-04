@@ -57,8 +57,8 @@ def simulate_free_motion(model_path, sim_time):
             dim = m.sensor_dim[sensor_id]       # Dimension of data 
             foot_force = d.sensordata[adr : adr + dim]
             f_norm = np.sqrt(foot_force[0]*foot_force[0] + foot_force[1]*foot_force[1] + foot_force[2]*foot_force[2])
-            torque, pos, pos_des, L, Ld = impedance_control(d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
-            #torque, pos, pos_des, L, Ld = impedance_lqr(m=m, d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
+            #torque, pos, pos_des, L, Ld = impedance_control(d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
+            torque, pos, pos_des, L, Ld = impedance_lqr(m=m, d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
             Force.append(f_norm)
             length.append(L)
             Torque_data.append(torque)
@@ -100,7 +100,7 @@ def simulate_free_motion(model_path, sim_time):
     ax2.plot(T, np.array(Torque_data)[:,0], label="Upper joint", linewidth=2)
     ax2.legend(loc='best', fontsize=12)
     plt.tight_layout()
-    plt.savefig("./display/Torque_PD")
+    plt.savefig("./display/Torque_LQR")
 
     plt.figure(figsize=(10, 6))
     plt.title("Force measured by sensor over time", fontsize=16)
@@ -109,7 +109,7 @@ def simulate_free_motion(model_path, sim_time):
     plt.plot(T, np.array(Force), label="F_ground", linewidth=2)
     plt.legend(loc='best', fontsize=12)
     plt.tight_layout()
-    plt.savefig("./display/Force_PD")
+    plt.savefig("./display/Force_LQR")
     
     plt.figure(figsize=(10, 6))
     plt.title("Joint positions over time", fontsize=16)
@@ -119,7 +119,7 @@ def simulate_free_motion(model_path, sim_time):
     plt.plot(T, np.array(Joint)[:,1], label="Leg joint", linewidth=2)
     plt.legend(loc='best', fontsize=12)
     plt.tight_layout()
-    plt.savefig("./display/Joint_PD")
+    plt.savefig("./display/Joint_LQR")
 
     position = np.array(position)
     goal = np.array(goal)
@@ -144,7 +144,7 @@ def simulate_free_motion(model_path, sim_time):
     ax2.plot(T, goal[:,1] , color='r', label="leg_ref", linewidth=2)
     ax2.legend(loc='best', fontsize=12)
     plt.tight_layout()
-    plt.savefig("./display/Position_PD")
+    plt.savefig("./display/Position_LQR")
 
     plt.figure(figsize=(10, 6))
     plt.title("Length in stance phase", fontsize=18)
@@ -154,7 +154,7 @@ def simulate_free_motion(model_path, sim_time):
     plt.plot(T, np.array(length), linewidth=2, label="L")
     plt.legend(loc='best', fontsize=12)
     plt.tight_layout()
-    plt.savefig("./display/Length_PD")
+    plt.savefig("./display/Length_LQR")
 
     print("Model=", model_path)
     print("Timestep =",timestep, "steps =",steps)

@@ -11,6 +11,10 @@ m_leg = 15*10**(-3) # kg
 ks = 7500 # N/m
 kd = 0.5 # Ns/m
 
+Q_0 = -PI/4 # upper"
+Q_1 =  PI/2 # leg
+delta_goal_x = L1*np.sin(Q_0) + L2*np.sin(Q_0 + Q_1)
+delta_goal_z = L1*np.cos(Q_0) + L2*np.cos(Q_0 + Q_1)
 
 def forward_kinematics(q, dq,  x_hip, z_hip):
     q0 = float(q[0])
@@ -46,7 +50,7 @@ def compute_lqr_gain(M_inv):
     B[2:, :] = M_inv
     
     Q = np.diag([500, 500, 10, 10]) 
-    R = np.diag([10, 10])
+    R = np.diag([0.1, 0.1])
     
     P = scipy.linalg.solve_continuous_are(A, B, Q, R)
     K = np.linalg.inv(R) @ (B.T @ P)
@@ -86,7 +90,7 @@ def lqr_control(m, d, q_des, dq_des):
 
 def impedance_lqr(m, d, x_hip, z_hip, f_ground):
     Ld = 0.2 # desired leg length with all leg have a angle of pi/4 
-    pos_des = np.array([ x_hip, z_hip - 0.2])
+    pos_des = np.array([ x_hip-delta_goal_x, z_hip - delta_goal_z])
 
     # Joint state
     q = d.qpos[[1, 2]]

@@ -9,7 +9,7 @@ The simulation compares two control strategies for the swing phase during a jump
 🎥 **Demo Videos:** Videos of the simulation for both controllers are available on the OneDrive repository
 
 ## 📂 Project Structure
-
+Inside the folder * `Simulation/`
 * `main.py`: The entry point of the simulation. Handles the simulation loop and data logging.
 * `controller.py`: Contains the standard Impedance Controller with a PD controller for the swing phase.
 * `controller_lqr.py`: Contains the Impedance Controller coupled with an LQR controller for the swing phase.

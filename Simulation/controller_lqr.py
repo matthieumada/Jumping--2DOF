@@ -28,17 +28,17 @@ def forward_kinematics(q, dq,  x_hip, z_hip):
     J = np.array([[-L1*np.cos(q0) - L2*np.cos(q0+q1), -L2*np.cos(q0+q1)],
                   [ L1*np.sin(q0)  + L2*np.sin(q0+q1),  L2*np.sin(q0+q1)]])
     
-    # lenght of the vritual model 
+    # lenght of the virtual model 
     L = np.sqrt( (delta_x)**2 + (delta_z)**2 )
     L_point = - (2*L1*L2/L)*np.sin(q1) * dq[1]
     return  pos_foot, J, L, L_point, delta_x, delta_z
 
-# Calcul de K global (pour éviter de le recalculer tout le temps)
-# On l'initialise à None
+# Compute of K to avoid to do it at each call
+# Initalize a None
 CACHED_K = None
 
 def compute_lqr_gain(M_inv):
-    # ... (Ta fonction est correcte) ...
+    # State-space matrices
     A = np.zeros((4, 4))
     A[0, 2] = 1; A[1, 3] = 1
     
@@ -55,36 +55,31 @@ def compute_lqr_gain(M_inv):
 def lqr_control(m, d, q_des, dq_des):
     global CACHED_K
     
-
     idx = [1, 2] 
     
-    # 2. Matrice de masse
+    # Mass matrix
     M = np.zeros((m.nv, m.nv))
     mujoco.mj_fullM(m, M, d.qM)
     
-    # Extraction sous-matrice pour Hip et Knee
+    # Extract hip and knee
     M_joint = M[np.ix_(idx, idx)] # Manière propre numpy d'extraire [1,2]x[1,2]
     M_inv = np.linalg.inv(M_joint)
     
-    # 3. Calcul du Gain (Optimisation : on ne recalcule que si M change beaucoup ou 1ere fois)
-    # Pour simplifier ici, on le calcule si CACHED_K est vide
+    # K computed only if K is None
+    # This avoids recomputing K at each call
     if CACHED_K is None:
         CACHED_K = compute_lqr_gain(M_inv)
-    
-    # Note : Pour un LQR parfait, il faudrait recalculer K si la config change beaucoup.
-    # Pour ce projet, un K constant calculé jambes un peu pliées suffit souvent.
-    #K = compute_lqr_gain(M_inv) # Decommente si tu veux recalculer à chaque fois (lent)
-    
-    # 4. Erreur d'état
+
+    # State error
     q_curr = d.qpos[idx]
     dq_curr = d.qvel[idx]
     
     x_err = np.concatenate((q_curr - q_des, dq_curr - dq_des))
     
-    # 5. Commande u = -Kx
-    tau_lqr = -CACHED_K @ x_err # Utilise CACHED_K ou K
+    # 5. Command u = -Kx
+    tau_lqr = -CACHED_K @ x_err 
     
-    # 6. Compensation Gravité + Coriolis
+    # Coriolis effect and gravity compensation
     tau_gravity = d.qfrc_bias[idx]
     
     return tau_lqr + tau_gravity
@@ -109,18 +104,15 @@ def impedance_lqr(m, d, x_hip, z_hip, f_ground):
         print("Torque in stance leg =", torque)
         
     else:
-        # --- SWING PHASE (LQR) ---
+        # Swing phase
         
-        # DEFINIR UNE CIBLE DE REPLI !
-        # Exemple : Hanche un peu pliée, Genou très plié pour ne pas toucher le sol
+        # Shape target in the air
         q_target = np.array([-PI/4, PI/2]) 
         dq_target = np.zeros(2)
         
-        # Appel du LQR
-        # Note : torque sera de taille 2 (pour Hip et Knee)
         torque_lqr = lqr_control(m, d, q_des=q_target, dq_des=dq_target)
         
-        # On assigne le couple calculé
+        # torque applied
         torque = torque_lqr
 
     return torque, pos_foot, pos_des, L, Ld

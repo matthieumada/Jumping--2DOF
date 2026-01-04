@@ -4,8 +4,11 @@ import numpy as np
 import time
 import queue
 import matplotlib.pyplot as plt
+plt.style.use('seaborn-v0_8-whitegrid')
+
 from controller import impedance_control
-#from no_mistake import impedance_control 
+from controller_lqr import impedance_lqr
+
 PI = np.pi
 
 # --- Main function ---
@@ -19,6 +22,7 @@ def simulate_free_motion(model_path, sim_time):
     position = []
     ref_z = [] 
     length = []
+    goal = []
     # load model 
     m = mujoco.MjModel.from_xml_path(model_path)
     d = mujoco.MjData(m)
@@ -47,13 +51,14 @@ def simulate_free_motion(model_path, sim_time):
         for i in range(steps):
             # forces data 
             hip_pos =float(d.sensordata[hip_sensor_id])
-            print("Hip position=", hip_pos)
+            #print("Hip position=", hip_pos)
 
             adr = m.sensor_adr[sensor_id]       # Id of froce sensor in sensor_data
             dim = m.sensor_dim[sensor_id]       # Dimension of data 
             foot_force = d.sensordata[adr : adr + dim]
             f_norm = np.sqrt(foot_force[0]*foot_force[0] + foot_force[1]*foot_force[1] + foot_force[2]*foot_force[2])
             torque, pos, pos_des, L, Ld = impedance_control(d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
+            #torque, pos, pos_des, L, Ld = impedance_lqr(m=m, d= d, x_hip=-0.16, z_hip=hip_pos, f_ground=f_norm)
             Force.append(f_norm)
             length.append(L)
             Torque_data.append(torque)
@@ -61,6 +66,7 @@ def simulate_free_motion(model_path, sim_time):
             Joint.append(d.qpos[[1,2]])
             ref_z.append(hip_pos)
             position.append(pos)
+            goal.append(pos_des)
             # Move to a new state of the simulation 
             d.ctrl = torque
             mujoco.mj_step(m, d) 
@@ -78,72 +84,78 @@ def simulate_free_motion(model_path, sim_time):
         while viewer.is_running():
             viewer.sync()
             time.sleep(0.01)
+    # Mujuco changes the style of plt so add it after the end of simulation 
+    plt.style.use('seaborn-v0_8-whitegrid')
 
-    plt.subplot(121)
-    plt.title("Leg Torque")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Torque [Nm]")
-    plt.plot(T, np.array(Torque_data)[:,1], label="Leg joinnt")
-    plt.legend()
-    plt.subplot(122)
-    plt.title("Upper leg Torque")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Torque [Nm]")
-    plt.plot(T, np.array(Torque_data)[:,0], label="Uppee joint")
-    plt.legend()
-    plt.savefig("./display/Torque")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6), sharey=False)
+    ax1.set_title("Leg Torque", fontsize=16)
+    ax1.set_xlabel("Time [s]", fontsize=14)
+    ax1.set_ylabel("Torque [Nm]", fontsize=14)
+    ax1.plot(T, np.array(Torque_data)[:,1], label="Leg joint", linewidth=2)
+    ax1.legend(loc='best', fontsize=12)
 
-    plt.figure()
-    plt.title("Force measured by sensor over time")
-    plt.xlabel("Time [s]")
-    plt.ylabel("F [N]")
-    plt.plot(T, np.array(Force), label="F_ground")
-    plt.legend()
-    plt.savefig("./display/Force")
+    ax2.set_title("Upper leg Torque", fontsize=16)
+    ax2.set_xlabel("Time [s]", fontsize=14)
+    ax2.set_ylabel("Torque [Nm]", fontsize=14)
+    ax2.plot(T, np.array(Torque_data)[:,0], label="Upper joint", linewidth=2)
+    ax2.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.savefig("./display/Torque_PD")
 
-    plt.figure()
-    plt.title("Joint positions over time")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Angle [rad]")
-    plt.plot(T, np.array(Joint)[:,0], label="Upper joint")
-    plt.plot(T, np.array(Joint)[:,1], label="Leg joint")
-    plt.legend()
-    plt.savefig("./display/Joint")
+    plt.figure(figsize=(10, 6))
+    plt.title("Force measured by sensor over time", fontsize=16)
+    plt.xlabel("Time [s]", fontsize=14)
+    plt.ylabel("F [N]", fontsize=14)
+    plt.plot(T, np.array(Force), label="F_ground", linewidth=2)
+    plt.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.savefig("./display/Force_PD")
+    
+    plt.figure(figsize=(10, 6))
+    plt.title("Joint positions over time", fontsize=16)
+    plt.xlabel("Time [s]", fontsize=12)
+    plt.ylabel("Angle [rad]", fontsize=12)
+    plt.plot(T, np.array(Joint)[:,0], label="Upper joint", linewidth=2)
+    plt.plot(T, np.array(Joint)[:,1], label="Leg joint", linewidth=2)
+    plt.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.savefig("./display/Joint_PD")
 
     position = np.array(position)
+    goal = np.array(goal)
     length_des = Ld * np.ones(np.shape(position)[0])
     des_x = pos_des[0] * np.ones(np.shape(position)[0]) 
     des_z = pos_des[1] * np.ones(np.shape(position)[0]) 
-    ref_z = np.array(ref_z)
-    plt.figure()
-    plt.subplot(121)
-    plt.title("Position on  X axis")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Axis x [m]")
-    plt.plot(T, position[:,0], color='b' ,label="Leg" )
-    plt.plot(T, des_x, color='r', label="x goal")
-    plt.legend()
-    
+    ref_z = np.array(ref_z) # hip position 
 
-    plt.subplot(122)
-    plt.title("Position on Z axis")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Axis z [m]")
-    plt.plot(T, position[:,1], color='b', label="Leg")
-    plt.plot(T, ref_z, color='k', label="hips")
-    plt.plot(T, des_z , color='r', label="leg_ref")
-    plt.legend()
-    plt.savefig("./display/Position")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6), sharey=False)
+    ax1.set_title("Position on X axis", fontsize=16)
+    ax1.set_xlabel("Time [s]", fontsize=14)
+    ax1.set_ylabel("Axis X [m]", fontsize=14)
+    ax1.plot(T, position[:,0], color='b' ,label="Leg" , linewidth=2)
+    ax1.plot(T, goal[:,0], color='r' ,label="x_goal" , linewidth=2)
+    ax1.legend(loc='best', fontsize=12)
 
-    plt.figure()
-    plt.title("Length in stance phase")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Length [m]")
-    plt.plot(T, length_des, label="L_des")
-    plt.plot(T, np.array(length), label="L")
-    plt.legend()
-    plt.savefig("./display/Length")
-    
+    ax2.set_title("Position Z axis", fontsize=16)
+    ax2.set_xlabel("Time [s]", fontsize=14)
+    ax2.set_ylabel("Axis Z [m]", fontsize=14)
+    ax2.plot(T, position[:,1], color='b', label="Leg", linewidth=2)
+    ax2.plot(T, ref_z, color='k', label="hips", linewidth=2)
+    ax2.plot(T, goal[:,1] , color='r', label="leg_ref", linewidth=2)
+    ax2.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.savefig("./display/Position_PD")
+
+    plt.figure(figsize=(10, 6))
+    plt.title("Length in stance phase", fontsize=18)
+    plt.xlabel("Time [s]", fontsize=14)
+    plt.ylabel("Length [m]", fontsize=14)
+    plt.plot(T, length_des, linewidth=2, label="L_des")
+    plt.plot(T, np.array(length), linewidth=2, label="L")
+    plt.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.savefig("./display/Length_PD")
+
     print("Model=", model_path)
     print("Timestep =",timestep, "steps =",steps)
     print("Sensor list :", [m.sensor(i).name for i in range(m.nsensor)])
@@ -158,4 +170,4 @@ def simulate_free_motion(model_path, sim_time):
 # --- Main launcher  ---
 if __name__ == "__main__":
     model_path = "ref_stand.xml"  # XML file
-    simulate_free_motion(model_path, sim_time=3.0)
+    simulate_free_motion(model_path, sim_time=2.5)

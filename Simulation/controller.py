@@ -6,24 +6,32 @@ PI = np.pi
 L1 = 0.16 # m
 L2 = 0.16 # m
 m_leg = 15*10**(-3) # kg
-ks = 10000 # N/m
-kd = 50# Ns/m
 
-# Controller parameter: stiffness and damping
-kx = 5.0 * 10 **(2)# N/m
+# Virtual model parameter 
+ks = 7500 # N/m
+kd = 0.5 # Ns/m
+
+#Controller parameter: stiffness and damping PD swing leg 
+kx = 1.75 * 10 **(3)# N/m
 kz = 5.0 * 10 **(2) # N/m
-mx = 3.0 * 10 **(1) # Ns/m 
-mz = 3.0 * 10 **(1) # Ns/m 
+mx = 1.0 * 10 **(1) # Ns/m 
+mz = 1.0 * 10 **(1) # Ns/m 
+
+# Controller parameter : stiffness swing P leg
+# kx = 1.75 * 10 **(3)# N/m
+# kz = 5.0 * 10 **(2) # N/m
+# mx = 0  # Ns/m 
+# mz = 0 # Ns/m 
 
 def forward_kinematics(q, dq,  x_hip, z_hip):
-    q0 = float(q[0])#-3*PI/4 # fixed 
+    q0 = float(q[0])
     q1 = float(q[1])
 
     delta_x = L1*np.sin(q0) + L2*np.sin(q0 + q1)
     delta_z = L1*np.cos(q0) + L2*np.cos(q0 + q1)
 
-    # take the posiiton of the hip from the model
-    pos_foot = np.zeros((2,1)) #[x,z]
+    # take the positon of the hip from the model
+    pos_foot = np.zeros((2,1)) # [x,z]
     pos_foot[0] = x_hip - delta_x #x
     pos_foot[1] = z_hip - delta_z #z 
 
@@ -54,7 +62,7 @@ def impedance_control(d, x_hip, z_hip, f_ground):
         torque =  J.T @ F # joint torques
         print("Torque in stance leg =", torque)
     else:
-        print("No contact with the ground --> Swing phase")
+        #print("No contact with the ground --> Swing phase")
         # PD position control 
         F_swing = np.array((2,1))
 
@@ -63,7 +71,7 @@ def impedance_control(d, x_hip, z_hip, f_ground):
         F_swing[1] = - kz*(pos_foot[1] - pos_des[1]) - mz * (J[1,0] *dq[0] - J[1,1] *dq[1])
 
         torque = J.T @ F_swing
-        print("Torque in swing leg =", torque, "position_real=", pos_foot, "position_des=", pos_des)
+        #print("Torque in swing leg =", torque, "position_real=", pos_foot, "position_des=", pos_des)
     return torque, pos_foot, pos_des, L, Ld
     
     

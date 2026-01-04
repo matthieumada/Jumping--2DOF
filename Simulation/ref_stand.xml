@@ -31,7 +31,7 @@
   <!-- ===== DEFAULTS ===== -->
   <default>
     <!-- general parameter 0.3  -->
-    <joint armature="0.01" damping="0.5"/>
+    <joint armature="0.01" damping="1.0"/>
     <geom friction="0.05 0.3 0.3" margin="0.002" solref="0.02 1" solimp="0.9 0.9 0.01"/>
 
     <!-- Leg class -->
@@ -85,8 +85,8 @@
 <!-- Actuator definition by joint  the actuator for the hip was for the design-->
 <actuator>
     <!-- <motor name="hip_motor" joint="hip_joint"  class="motor" /> Translation  -->  
-    <motor name="upper_motor" joint="upper_joint" class="motor" ctrlrange="-400 400" forcerange="-400 400" /> <!-- Rotation  -->
-    <motor name="leg_motor"   joint="leg_joint"   class="motor" ctrlrange="-400 400" forcerange="-400 400" />  <!-- Rotation  -->
+    <motor name="upper_motor" joint="upper_joint" class="motor" ctrlrange="-200 200" forcerange="-200 200" /> <!-- Rotation  -->
+    <motor name="leg_motor"   joint="leg_joint"   class="motor" ctrlrange="-200 200" forcerange="-200 200" />  <!-- Rotation  -->
 </actuator>
 
 <!-- Sensor to get data and have a good control on the feedback-->
